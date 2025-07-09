@@ -1,40 +1,60 @@
 import { Request, Response } from 'express';
 import Tip from '../models/tips.model'
+import mongoose from 'mongoose';
 
 export const CreateTipPayment = async (req: Request, res: Response): Promise<void> => {
-
     try {
-
-        const { Cantidad, Divisiones, MetodoPago } = req.body;
+        const { Cantidad, Pagos } = req.body;
 
         if (!Cantidad) {
-            res.status(400).json({ message: 'Es Necesario agrear una cantidad de propinas' })
-        } else if (!MetodoPago) {
-            res.status(400).json({ message: 'No se ha agregado un metodo de pago' })
-        } else if (!Divisiones) {
-            res.status(400).json({ message: 'No se ha agregado el numero de Empleados' })
+            res.status(400).json({ message: 'Es necesario agregar una cantidad de propinas' });
+            return;
         }
 
-        const DivPorPersona = Cantidad / Divisiones;
+        if (!Pagos || !Array.isArray(Pagos) || Pagos.length === 0) {
+            res.status(400).json({ message: 'Se requiere al menos un pago' });
+            return;
+        }
 
-        const newTip = new Tip({
+        for (const pago of Pagos) {
+            if (!pago.PayMethod || !mongoose.Types.ObjectId.isValid(pago.PayMethod)) {
+                res.status(400).json({ message: 'Método de pago inválido o faltante en uno de los pagos' });
+                return;
+            }
+
+            if (typeof pago.Pagado !== 'number' || pago.Pagado <= 0) {
+                res.status(400).json({ message: 'Monto de pago inválido en uno de los pagos' });
+                return;
+            }
+        }
+
+        const tip = new Tip({
             Cantidad,
-            Divisiones,
-            DivPorPersona: DivPorPersona.toFixed(2),
-            MetodoPago
+            NumeroPagos: Pagos.length,
+            Pagos
         });
 
-        await newTip.save();
+        await tip.save();
 
-        res.status(201).json(newTip);
+        res.status(201).json(tip);
+    } catch (error) {
+        console.error('Error al crear el pago de propinas:', error);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+};
 
+export const GetAllTiPayments = async (req: Request, res: Response): Promise<void> => {
+
+    try {
+        const tips = await Tip.find();
+        res.status(200).json(tips);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error en el Servidor' });
     }
-
 }
 
 export default {
-    CreateTipPayment
+    CreateTipPayment,
+    GetAllTiPayments
 }

@@ -12,36 +12,56 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateTipPayment = void 0;
+exports.GetAllTiPayments = exports.CreateTipPayment = void 0;
 const tips_model_1 = __importDefault(require("../models/tips.model"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const CreateTipPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { Cantidad, Divisiones, MetodoPago } = req.body;
+        const { Cantidad, Pagos } = req.body;
         if (!Cantidad) {
-            res.status(400).json({ message: 'Es Necesario agrear una cantidad de propinas' });
+            res.status(400).json({ message: 'Es necesario agregar una cantidad de propinas' });
+            return;
         }
-        else if (!MetodoPago) {
-            res.status(400).json({ message: 'No se ha agregado un metodo de pago' });
+        if (!Pagos || !Array.isArray(Pagos) || Pagos.length === 0) {
+            res.status(400).json({ message: 'Se requiere al menos un pago' });
+            return;
         }
-        else if (!Divisiones) {
-            res.status(400).json({ message: 'No se ha agregado el numero de Empleados' });
+        for (const pago of Pagos) {
+            if (!pago.PayMethod || !mongoose_1.default.Types.ObjectId.isValid(pago.PayMethod)) {
+                res.status(400).json({ message: 'Método de pago inválido o faltante en uno de los pagos' });
+                return;
+            }
+            if (typeof pago.Pagado !== 'number' || pago.Pagado <= 0) {
+                res.status(400).json({ message: 'Monto de pago inválido en uno de los pagos' });
+                return;
+            }
         }
-        const DivPorPersona = Cantidad / Divisiones;
-        const newTip = new tips_model_1.default({
+        const tip = new tips_model_1.default({
             Cantidad,
-            Divisiones,
-            DivPorPersona: DivPorPersona.toFixed(2),
-            MetodoPago
+            NumeroPagos: Pagos.length,
+            Pagos
         });
-        yield newTip.save();
-        res.status(201).json(newTip);
+        yield tip.save();
+        res.status(201).json(tip);
+    }
+    catch (error) {
+        console.error('Error al crear el pago de propinas:', error);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+});
+exports.CreateTipPayment = CreateTipPayment;
+const GetAllTiPayments = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const tips = yield tips_model_1.default.find();
+        res.status(200).json(tips);
     }
     catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error en el Servidor' });
     }
 });
-exports.CreateTipPayment = CreateTipPayment;
+exports.GetAllTiPayments = GetAllTiPayments;
 exports.default = {
-    CreateTipPayment: exports.CreateTipPayment
+    CreateTipPayment: exports.CreateTipPayment,
+    GetAllTiPayments: exports.GetAllTiPayments
 };

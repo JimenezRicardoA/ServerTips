@@ -1,10 +1,15 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
+import { IPayMethod } from './paymethod.model';
+
+export interface IPago {
+    PayMethod: Types.ObjectId | IPayMethod;
+    Pagado: number;
+}
 
 export interface ITip extends Document {
     Cantidad: number;
-    Divisiones: number;
-    DivPorPersona?: number;
-    MetodoPago: string;
+    NumeroPagos: number;
+    Pagos: IPago[];
 }
 
 const TipSchema: Schema<ITip> = new Schema({
@@ -12,18 +17,22 @@ const TipSchema: Schema<ITip> = new Schema({
         type: Number,
         required: true
     },
-    Divisiones: {
+    NumeroPagos: {
         type: Number,
         required: true
     },
-    DivPorPersona: {
-        type: Number,
-        required: true
-    },
-    MetodoPago: {
-        type: String,
-        required: true
-    }
+    Pagos: [{
+        PayMethod: {
+            type: Schema.Types.ObjectId,
+            ref: 'PayMethod',
+            required: true
+        },
+        Pagado: {
+            type: Number,
+            required: true
+        }
+    }]
+
 })
 
 const Tip = mongoose.model<ITip>('Tip', TipSchema);

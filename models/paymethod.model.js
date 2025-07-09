@@ -34,26 +34,15 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const TipSchema = new mongoose_1.Schema({
-    Cantidad: {
-        type: Number,
+const PayMethodSchema = new mongoose_1.Schema({
+    payMethod: {
+        type: String,
         required: true
     },
-    NumeroPagos: {
-        type: Number,
+    icon: {
+        type: String,
         required: true
-    },
-    Pagos: [{
-            PayMethod: {
-                type: mongoose_1.Schema.Types.ObjectId,
-                ref: 'PayMethod',
-                required: true
-            },
-            Pagado: {
-                type: Number,
-                required: true
-            }
-        }]
+    }
 });
-const Tip = mongoose_1.default.model('Tip', TipSchema);
-exports.default = Tip;
+const PayMethod = mongoose_1.default.model('PayMethod', PayMethodSchema);
+exports.default = PayMethod;
